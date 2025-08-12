@@ -1,4 +1,4 @@
-# Resource Explorer Explorer (React + TypeScript)
+# Resource Explorer (React + TypeScript)
 
 A fast, single-page React app for exploring characters from the public **[Rick & Morty API](https://rickandmortyapi.com)**. It supports search, filtering, sorting, pagination, favorites with persistence, a rich detail view, dark/light theme, and resilient UX (loading/error/empty states). URL parameters are the source of truth, so the app is shareable and reload-safe.
 
@@ -306,4 +306,10 @@ Vite 7 requires Node ≥ 20.19 or ≥ 22.12. Upgrade via `nvm install 22; nvm us
 - `page`, `name` (search), `status`, `gender`, `species`, `type`
 
 The API returns 404 when no results match; we normalize to an empty list to show a "No results" UI instead of a hard error.
+
+## Next Steps
+- Virtualized list (react-window) for very large lists.
+- E2E smoke test (Playwright/Cypress): search → open detail → toggle favorite.
+- Notes form on detail with validation (react-hook-form + zod).
+- Prefetch adjacent pages on idle for near-instant pagination.
 
