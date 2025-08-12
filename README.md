@@ -157,4 +157,153 @@ export default {
 }
 ```
 
+### CSS Entry (`src/index.css`)
+
+Either style works:
+
+```css
+/* v3 style */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* globals */
+:root { color-scheme: light dark; }
+html, body, #root { height: 100%; }
+```
+
+```css
+/* v4 style (also OK) */
+@import "tailwindcss";
+:root { color-scheme: light dark; }
+html, body, #root { height: 100%; }
+
+## 🔎 How Things Work
+
+### URL is the Source of Truth
+
+The list UI state is round-tripped through search params:
+
+- `?q=` search (debounced ~400ms)
+- `?status=`, `?gender=`, `?species=`, `?type=`
+- `?sort=name-asc|name-desc|id-asc|id-desc|status-asc|...|episodes-desc`
+- `?fav=1` favorites-only
+- `?page=1..N` pagination
+
+Directly visiting a URL reconstructs the UI (shareable & reload-safe). Back/forward navigation is natural. The code uses `useSearchParams()` to read/write state.
+
+### Data Fetching (TanStack Query)
+
+Query keys include the parameters above:
+`['characters', { page, q, status, gender, species, type }]`, and `['character', id]`
+
+- **Abort on change**: `useQuery` injects an `AbortSignal`, forwarded to fetch → in-flight requests are canceled when inputs change (no race conditions).
+- **Cache / background refetch**: `staleTime` and defaults are tuned for a responsive UI without flicker; previous page results are kept via `placeholderData` during pagination.
+- **Status flags**: `isLoading`, `isError`, `isFetching` drive skeletons, retry button, and subtle disabled states.
+
+### Favorites Store
+
+A tiny local store over `localStorage` using `useSyncExternalStore` for React 18/19 correctness.
+
+- Snapshot is kept referentially stable (no infinite loops).
+- Optimistic UI: toggling updates immediately, no server call.
+
+### Theme Toggle
+
+Persisted in `localStorage` (`theme:v1`), with system preference fallback and support for an existing `<html class="dark">`.
+
+- Implementation toggles only the `dark` class on `<html>`.
+- Debugging logs (opt-in) help verify state transitions.
+
+### Scroll Restoration
+
+On page POP (back/forward), we scroll to the previous Y position saved to `sessionStorage`, keyed by pathname + search. This preserves list position when navigating between list and detail or when using history.
+
+## 🧭 Key Routes
+
+- `/` – Home (hero, links to characters & favorites)
+- `/characters` – List (search/filter/sort/pagination/favorites)
+- `/characters/:id` – Detail (badges, metadata, episodes count, ⭐)
+
+## 📦 Dependencies
+
+Install these if they aren't already in `package.json`:
+
+```bash
+# app core
+npm i react react-dom react-router-dom @tanstack/react-query
+
+# ui
+npm i tailwind-merge clsx lucide-react
+npm i @radix-ui/react-accordion @radix-ui/react-tooltip @radix-ui/react-tabs @radix-ui/react-slot
+npm i class-variance-authority
+
+# tailwind + postcss
+npm i -D tailwindcss postcss autoprefixer
+# or for v4:
+npm i -D @tailwindcss/postcss autoprefixer
+```
+
+## 🧪 Scripts
+
+```bash
+npm run dev       # start dev server
+npm run build     # production build
+npm run preview   # serve built app locally
+```
+
+(If you add tests later, e.g. Playwright/Cypress, place scripts here.)
+
+## 🔧 Troubleshooting
+
+### "Tooltip must be used within TooltipProvider"
+Wrap your app once with `<TooltipProvider>` (in App.tsx).
+
+### "Cannot find module '@radix-ui/react-…'"
+Install needed Radix packages:
+```bash
+npm i @radix-ui/react-accordion @radix-ui/react-tooltip @radix-ui/react-tabs @radix-ui/react-slot
+```
+
+### Button types ("variant/size" not found)
+Ensure `class-variance-authority` is installed, and `ButtonProps` extends the CVA variant types.
+
+### tailwind-merge / clsx / cn helper missing
+```bash
+npm i tailwind-merge clsx
+```
+and check `src/lib/utils.ts`.
+
+### Tailwind v4 PostCSS error
+Install `@tailwindcss/postcss` and update `postcss.config.js` (see above).
+
+### React types warning: React.ElementRef is deprecated
+Use `React.ComponentRef` in UI wrappers (accordion/tabs/tooltip).
+
+### Node engine error (EBADENGINE)
+Vite 7 requires Node ≥ 20.19 or ≥ 22.12. Upgrade via `nvm install 22; nvm use 22` or use Vite 5.
+
+## 🧩 Architecture & Trade-offs
+
+- **Client-side sort on current page**: simple and fast. If you need cross-page global sort, do server-side sort or aggregate results (with perf caveats).
+- **URL-first state** minimizes component state drift and makes shareable views trivial.
+- **TanStack Query** over homegrown fetch logic to get robust cache, retries, abort handling, and status flags out of the box.
+- **Local favorites** rather than remote persistence: perfectly fine for a demo; can be swapped for an API later.
+- **Virtualization omitted** to keep deps lean; recommended once pages exceed ~100 items (react-window).
+
+## ♿ Accessibility
+
+- Semantic HTML for lists, buttons, nav.
+- Focus outlines via Tailwind & button variants.
+- Labels for inputs and controls.
+- ARIA attributes (e.g., `aria-current` in pagination, `aria-pressed` in favorites).
+
+## 🗺️ API Notes
+
+**Base**: `https://rickandmortyapi.com/api/character`
+
+**Supported query params used here**:
+- `page`, `name` (search), `status`, `gender`, `species`, `type`
+
+The API returns 404 when no results match; we normalize to an empty list to show a "No results" UI instead of a hard error.
 
