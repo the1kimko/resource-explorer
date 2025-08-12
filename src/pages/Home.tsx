@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <section className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 p-10">
       <div className="max-w-3xl space-y-4">
-        <h1 className="text-4xl font-extrabold tracking-tight">Rick & Morty Explorer</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">Resource Explorer</h1>
         <p className="text-slate-600 dark:text-slate-300">
           Search, filter, sort, favorite, and dive into character details. URL-driven state, fast UI, and offline-friendly caching.
         </p>
